@@ -1,0 +1,77 @@
+// Types pour l'application RH
+
+export type ContractType = 'CDI' | 'CDD' | 'STAGE' | 'FREELANCE' | 'INTERIM';
+
+export interface Employee {
+  id: string;
+  code: string;
+  nom: string;
+  prenom: string;
+  cin: string;
+  type_contrat: ContractType;
+  service: string | null;
+  poste: string;
+  date_embauche: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Salary {
+  id: string;
+  employee_id: string;
+  year: number;
+  month: number;
+  salaire: number;
+  prime: number | null;
+  created_at: string;
+  updated_at: string;
+  employee?: Employee;
+}
+
+export interface Company {
+  id: string;
+  nom: string;
+  adresse: string | null;
+  ville: string | null;
+  logo_url: string | null;
+  cnss_employeur: string | null;
+  rib: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Counter {
+  id: string;
+  entity: string;
+  last_value: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Types pour les formulaires
+export interface EmployeeFormData {
+  nom: string;
+  prenom: string;
+  cin: string;
+  type_contrat: ContractType;
+  service?: string;
+  poste: string;
+  date_embauche: string;
+}
+
+export interface SalaryFormData {
+  employee_id: string;
+  year: number;
+  month: number;
+  salaire: number;
+  prime?: number;
+}
+
+export interface CompanyFormData {
+  nom: string;
+  adresse?: string;
+  ville?: string;
+  logo_url?: string;
+  cnss_employeur?: string;
+  rib?: string;
+}
