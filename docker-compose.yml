@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        - VITE_API_URL=http://backend:3005/api
+        - VITE_API_URL=http://31.97.177.87:3005/api
     ports:
       - "8087:8087"
     environment:

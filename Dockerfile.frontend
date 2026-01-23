@@ -4,7 +4,7 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 
 # Build args for API URL
-ARG VITE_API_URL=http://backend:3005/api
+ARG VITE_API_URL=http://31.97.177.87:3005/api
 
 # Copy dependencies
 COPY package.json bun.lockb ./
