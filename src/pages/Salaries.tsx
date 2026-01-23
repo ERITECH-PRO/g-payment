@@ -38,11 +38,12 @@ import {
 } from '@/components/ui/select';
 import { useSalaries } from '@/hooks/useSalaries';
 import { useEmployees } from '@/hooks/useEmployees';
-import { 
-  MONTHS, 
-  formatCurrency, 
-  getCurrentMonthYear, 
-  getYearOptions 
+import { API_URL } from '@/config/api';
+import {
+  MONTHS,
+  formatCurrency,
+  getCurrentMonthYear,
+  getYearOptions
 } from '@/lib/constants';
 import type { Salary, SalaryFormData } from '@/types/database';
 import { Plus, Pencil, Trash2, Loader2, Wallet, FileText, Filter } from 'lucide-react';
@@ -52,13 +53,13 @@ export default function Salaries() {
   const { month: currentMonth, year: currentYear } = getCurrentMonthYear();
   const [filterYear, setFilterYear] = useState(currentYear);
   const [filterMonth, setFilterMonth] = useState<number | undefined>(currentMonth);
-  
+
   const { salaries, isLoading, createSalary, updateSalary, deleteSalary } = useSalaries({
     year: filterYear,
     month: filterMonth,
   });
   const { employees } = useEmployees();
-  
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSalary, setSelectedSalary] = useState<Salary | null>(null);
@@ -70,6 +71,7 @@ export default function Salaries() {
     month: currentMonth,
     salaire: 0,
     prime: 0,
+    absence: 0,
   });
 
   const resetForm = () => {
@@ -79,6 +81,7 @@ export default function Salaries() {
       month: currentMonth,
       salaire: 0,
       prime: 0,
+      absence: 0,
     });
     setSelectedSalary(null);
   };
@@ -92,6 +95,7 @@ export default function Salaries() {
         month: salary.month,
         salaire: Number(salary.salaire),
         prime: Number(salary.prime) || 0,
+        absence: Number(salary.absence) || 0,
       });
     } else {
       resetForm();
@@ -106,18 +110,18 @@ export default function Salaries() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.employee_id) {
       toast.error('Veuillez sélectionner un employé');
       return;
     }
-    
+
     if (selectedSalary) {
       await updateSalary.mutateAsync({ id: selectedSalary.id, ...formData });
     } else {
       await createSalary.mutateAsync(formData);
     }
-    
+
     handleCloseDialog();
   };
 
@@ -132,23 +136,24 @@ export default function Salaries() {
   const handleGeneratePDF = async (salary: Salary) => {
     // Génération PDF côté client
     toast.info('Génération du bulletin de paie en cours...');
-    
-    // On va appeler l'edge function pour générer le PDF
+
+    // On va appeler l'API pour générer le PDF
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-payslip`,
+        `${API_URL}/generate-payslip`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await import('@/integrations/supabase/client')).supabase.auth.getSession().then(s => s.data.session?.access_token)}`,
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({ salaryId: salary.id }),
         }
       );
-      
+
       if (!response.ok) throw new Error('Erreur lors de la génération');
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -158,7 +163,7 @@ export default function Salaries() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast.success('Bulletin de paie téléchargé');
     } catch (error) {
       toast.error('Erreur lors de la génération du PDF');
@@ -390,7 +395,7 @@ export default function Salaries() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="salaire">Salaire (MAD) *</Label>
+                <Label htmlFor="salaire">Salaire (TND) *</Label>
                 <Input
                   id="salaire"
                   type="number"
@@ -402,7 +407,7 @@ export default function Salaries() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="prime">Prime (MAD)</Label>
+                <Label htmlFor="prime">Prime (TND)</Label>
                 <Input
                   id="prime"
                   type="number"
@@ -410,6 +415,17 @@ export default function Salaries() {
                   step="0.01"
                   value={formData.prime || 0}
                   onChange={(e) => setFormData({ ...formData, prime: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="absence">Absences (jours)</Label>
+                <Input
+                  id="absence"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={formData.absence || 0}
+                  onChange={(e) => setFormData({ ...formData, absence: Number(e.target.value) })}
                 />
               </div>
             </div>

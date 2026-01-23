@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import type { Salary, SalaryFormData } from '@/types/database';
 import { toast } from 'sonner';
 import { getCurrentMonthYear } from '@/lib/constants';
+import { API_URL } from '@/config/api';
 
 interface SalaryFilters {
   year?: number;
@@ -16,52 +16,37 @@ export function useSalaries(filters?: SalaryFilters) {
   const { data: salaries = [], isLoading, error } = useQuery({
     queryKey: ['salaries', year, month],
     queryFn: async () => {
-      let query = supabase
-        .from('salaries')
-        .select(`
-          *,
-          employee:employees(*)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (year) {
-        query = query.eq('year', year);
+      const params = new URLSearchParams();
+      if (year) params.append('year', year.toString());
+      if (month) params.append('month', month.toString());
+
+      const response = await fetch(`${API_URL}/salaries?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch salaries');
       }
-      if (month) {
-        query = query.eq('month', month);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data as Salary[];
+      return response.json() as Promise<Salary[]>;
     },
   });
 
   const createSalary = useMutation({
     mutationFn: async (formData: SalaryFormData) => {
-      const { data, error } = await supabase
-        .from('salaries')
-        .insert([{
-          employee_id: formData.employee_id,
-          year: formData.year,
-          month: formData.month,
-          salaire: formData.salaire,
+      const response = await fetch(`${API_URL}/salaries`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
           prime: formData.prime ?? 0,
-        }])
-        .select(`
-          *,
-          employee:employees(*)
-        `)
-        .single();
-      
-      if (error) {
-        if (error.code === '23505') {
-          throw new Error('Un salaire existe déjà pour cet employé ce mois-ci');
-        }
-        throw error;
+          absence: formData.absence ?? 0
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create salary');
       }
-      return data as Salary;
+      return response.json() as Promise<Salary>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salaries'] });
@@ -74,24 +59,22 @@ export function useSalaries(filters?: SalaryFilters) {
 
   const updateSalary = useMutation({
     mutationFn: async ({ id, ...formData }: SalaryFormData & { id: string }) => {
-      const { data, error } = await supabase
-        .from('salaries')
-        .update({
-          employee_id: formData.employee_id,
-          year: formData.year,
-          month: formData.month,
-          salaire: formData.salaire,
+      const response = await fetch(`${API_URL}/salaries/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
           prime: formData.prime ?? 0,
-        })
-        .eq('id', id)
-        .select(`
-          *,
-          employee:employees(*)
-        `)
-        .single();
-      
-      if (error) throw error;
-      return data as Salary;
+          absence: formData.absence ?? 0
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update salary');
+      }
+      return response.json() as Promise<Salary>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salaries'] });
@@ -104,12 +87,13 @@ export function useSalaries(filters?: SalaryFilters) {
 
   const deleteSalary = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('salaries')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      const response = await fetch(`${API_URL}/salaries/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete salary');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salaries'] });

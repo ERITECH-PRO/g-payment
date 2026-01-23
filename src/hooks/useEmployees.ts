@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import type { Employee, EmployeeFormData } from '@/types/database';
 import { toast } from 'sonner';
+import { API_URL } from '@/config/api';
 
 export function useEmployees() {
   const queryClient = useQueryClient();
@@ -9,36 +9,32 @@ export function useEmployees() {
   const { data: employees = [], isLoading, error } = useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employees')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Employee[];
+      const response = await fetch(`${API_URL}/employees`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch employees');
+      }
+      return response.json() as Promise<Employee[]>;
     },
   });
 
   const createEmployee = useMutation({
     mutationFn: async (formData: EmployeeFormData) => {
-      // Le code est généré automatiquement par trigger, on utilise une valeur placeholder
-      const { data, error } = await supabase
-        .from('employees')
-        .insert([{
-          code: 'TEMP', // Sera remplacé par le trigger
-          nom: formData.nom,
-          prenom: formData.prenom,
-          cin: formData.cin,
-          type_contrat: formData.type_contrat,
-          service: formData.service || null,
-          poste: formData.poste,
-          date_embauche: formData.date_embauche,
-        }] as any)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as Employee;
+      const response = await fetch(`${API_URL}/employees`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          code: 'TEMP', // Backend will generate the code
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create employee');
+      }
+      return response.json() as Promise<Employee>;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
@@ -51,23 +47,18 @@ export function useEmployees() {
 
   const updateEmployee = useMutation({
     mutationFn: async ({ id, ...formData }: EmployeeFormData & { id: string }) => {
-      const { data, error } = await supabase
-        .from('employees')
-        .update({
-          nom: formData.nom,
-          prenom: formData.prenom,
-          cin: formData.cin,
-          type_contrat: formData.type_contrat,
-          service: formData.service || null,
-          poste: formData.poste,
-          date_embauche: formData.date_embauche,
-        })
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as Employee;
+      const response = await fetch(`${API_URL}/employees/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update employee');
+      }
+      return response.json() as Promise<Employee>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
@@ -80,12 +71,13 @@ export function useEmployees() {
 
   const deleteEmployee = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('employees')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      const response = await fetch(`${API_URL}/employees/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete employee');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
