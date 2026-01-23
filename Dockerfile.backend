@@ -20,7 +20,7 @@ ENV DB_HOST=31.97.177.87
 ENV DB_PORT=3307
 ENV DB_USER=root
 ENV DB_PASSWORD=StrongPass123
-ENV DB_NAME=emoloye
+ENV DB_NAME=employe
 ENV JWT_SECRET=change-this-secret-key
 ENV NODE_ENV=production
 
