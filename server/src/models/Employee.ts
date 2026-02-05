@@ -42,7 +42,7 @@ export class Employee extends Model {
     cin!: string;
 
     @Column({
-        type: DataType.ENUM('CDI', 'CDD', 'STAGE', 'FREELANCE', 'INTERIM'),
+        type: DataType.ENUM('CDI', 'CDD', 'STAGE', 'FREELANCE', 'INTERIM', 'SIVP', 'VERBAL'),
         allowNull: false,
     })
     type_contrat!: string;

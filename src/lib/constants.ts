@@ -5,6 +5,8 @@ export const CONTRACT_TYPES = [
   { value: 'STAGE', label: 'Stage' },
   { value: 'FREELANCE', label: 'Freelance' },
   { value: 'INTERIM', label: 'Intérim' },
+  { value: 'SIVP', label: 'SIVP' },
+  { value: 'VERBAL', label: 'Contrat verbal (tacite)' },
 ] as const;
 
 // Mois en français

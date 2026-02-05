@@ -1,6 +1,6 @@
 // Types pour l'application RH
 
-export type ContractType = 'CDI' | 'CDD' | 'STAGE' | 'FREELANCE' | 'INTERIM';
+export type ContractType = 'CDI' | 'CDD' | 'STAGE' | 'FREELANCE' | 'INTERIM' | 'SIVP' | 'VERBAL';
 
 export interface Employee {
   id: string;
