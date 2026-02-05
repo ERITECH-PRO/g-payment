@@ -73,6 +73,7 @@ export default function Salaries() {
     prime: 0,
     absence: 0,
     avance: 0,
+    date_avance: new Date().toISOString().split('T')[0],
   });
 
   const resetForm = () => {
@@ -84,6 +85,7 @@ export default function Salaries() {
       prime: 0,
       absence: 0,
       avance: 0,
+      date_avance: new Date().toISOString().split('T')[0],
     });
     setSelectedSalary(null);
   };
@@ -99,6 +101,7 @@ export default function Salaries() {
         prime: Number(salary.prime) || 0,
         absence: Number(salary.absence) || 0,
         avance: Number(salary.avance) || 0,
+        date_avance: salary.date_avance || new Date().toISOString().split('T')[0],
       });
     } else {
       resetForm();
@@ -446,6 +449,17 @@ export default function Salaries() {
                   onChange={(e) => setFormData({ ...formData, avance: Number(e.target.value) })}
                 />
               </div>
+              {(formData.avance || 0) > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="date_avance">Date de l'avance</Label>
+                  <Input
+                    id="date_avance"
+                    type="date"
+                    value={formData.date_avance || ''}
+                    onChange={(e) => setFormData({ ...formData, date_avance: e.target.value })}
+                  />
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={handleCloseDialog}>

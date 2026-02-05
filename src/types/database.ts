@@ -25,6 +25,7 @@ export interface Salary {
   prime: number | null;
   absence: number | null;
   avance: number | null;
+  date_avance: string | null;
   created_at: string;
   updated_at: string;
   employee?: Employee;
@@ -69,6 +70,7 @@ export interface SalaryFormData {
   prime?: number;
   absence?: number;
   avance?: number;
+  date_avance?: string;
 }
 
 export interface CompanyFormData {

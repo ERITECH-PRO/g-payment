@@ -201,7 +201,8 @@ app.post('/api/salaries', async (req, res) => {
             salaire: Number(req.body.salaire),
             prime: Number(req.body.prime) || 0,
             absence: Number(req.body.absence) || 0,
-            avance: Number(req.body.avance) || 0
+            avance: Number(req.body.avance) || 0,
+            date_avance: req.body.date_avance || null
         });
         const salaryWithEmployee = await Salary.findByPk(salary.id, { include: [Employee] });
         res.json(salaryWithEmployee);
@@ -220,7 +221,8 @@ app.put('/api/salaries/:id', async (req, res) => {
             salaire: req.body.salaire !== undefined ? Number(req.body.salaire) : undefined,
             prime: req.body.prime !== undefined ? Number(req.body.prime) : undefined,
             absence: req.body.absence !== undefined ? Number(req.body.absence) : undefined,
-            avance: req.body.avance !== undefined ? Number(req.body.avance) : undefined
+            avance: req.body.avance !== undefined ? Number(req.body.avance) : undefined,
+            date_avance: req.body.date_avance !== undefined ? req.body.date_avance : undefined
         }, { where: { id } });
         if (updated) {
             const updatedSalary = await Salary.findByPk(id, { include: [Employee] });
@@ -411,7 +413,7 @@ app.post('/api/generate-payslip', async (req, res) => {
         let rowY = tableHeaderY + 20;
 
         // Base Salary Row
-        doc.text('SAL_BASE', cols[0] + 2, rowY);
+        doc.text('SAL_B', cols[0] + 2, rowY);
         doc.text('SALAIRE DE BASE', cols[1] + 2, rowY);
         doc.text(dailyRate.toFixed(3), cols[2] + 2, rowY, { width: cols[3] - cols[2] - 4, align: 'right' });
         doc.text(workedDays.toString(), cols[3] + 2, rowY, { width: cols[4] - cols[3] - 4, align: 'center' });
@@ -429,8 +431,15 @@ app.post('/api/generate-payslip', async (req, res) => {
         if (avanceAmount > 0) {
             rowY += 12;
             const today = new Date().toLocaleDateString('fr-FR');
+            let dateLabel = today;
+            if (salary.date_avance) {
+                const parts = salary.date_avance.split('-');
+                if (parts.length === 3) {
+                    dateLabel = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            }
             doc.text('AV_SAL', cols[0] + 2, rowY);
-            doc.text(`AVANCE SUR SALAIRE ${today}`, cols[1] + 2, rowY);
+            doc.text(`AVANCE SUR SALAIRE ${dateLabel}`, cols[1] + 2, rowY);
             doc.text(avanceAmount.toFixed(3), cols[5] + 2, rowY, { width: cols[6] - cols[5] - 4, align: 'right' });
         }
 

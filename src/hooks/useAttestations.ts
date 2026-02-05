@@ -11,7 +11,7 @@ export const useAttestations = () => {
         setIsGenerating(true);
         try {
             const response = await axios.post(
-                `${API_URL}/api/generate-work-certificate`,
+                `${API_URL}/generate-work-certificate`,
                 { employeeId },
                 {
                     responseType: 'blob',
@@ -41,7 +41,7 @@ export const useAttestations = () => {
         setIsGenerating(true);
         try {
             const response = await axios.post(
-                `${API_URL}/api/generate-internship-certificate`,
+                `${API_URL}/generate-internship-certificate`,
                 { employeeId },
                 {
                     responseType: 'blob',

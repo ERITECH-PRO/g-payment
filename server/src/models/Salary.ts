@@ -63,4 +63,10 @@ export class Salary extends Model {
         defaultValue: 0,
     })
     avance!: number;
+
+    @Column({
+        type: DataType.DATEONLY,
+        allowNull: true,
+    })
+    date_avance!: string;
 }
