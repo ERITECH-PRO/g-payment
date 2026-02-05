@@ -37,12 +37,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useAttestations } from '@/hooks/useAttestations';
 import { CONTRACT_TYPES, formatShortDate } from '@/lib/constants';
 import type { Employee, EmployeeFormData, ContractType } from '@/types/database';
-import { Plus, Pencil, Trash2, Loader2, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Users, FileText, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function Employees() {
   const { employees, isLoading, createEmployee, updateEmployee, deleteEmployee } = useEmployees();
+  const { generateWorkCertificate, generateInternshipCertificate, isGenerating } = useAttestations();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -96,13 +104,13 @@ export default function Employees() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (selectedEmployee) {
       await updateEmployee.mutateAsync({ id: selectedEmployee.id, ...formData });
     } else {
       await createEmployee.mutateAsync(formData);
     }
-    
+
     handleCloseDialog();
   };
 
@@ -174,6 +182,33 @@ export default function Employees() {
                   <TableCell>{formatShortDate(employee.date_embauche)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={isGenerating}
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => generateWorkCertificate(employee.id)}
+                            disabled={isGenerating}
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Attestation de travail
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => generateInternshipCertificate(employee.id)}
+                            disabled={isGenerating || employee.type_contrat !== 'STAGE'}
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Attestation de stage
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Button
                         variant="ghost"
                         size="icon"

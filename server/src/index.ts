@@ -200,7 +200,8 @@ app.post('/api/salaries', async (req, res) => {
             month: Number(month),
             salaire: Number(req.body.salaire),
             prime: Number(req.body.prime) || 0,
-            absence: Number(req.body.absence) || 0
+            absence: Number(req.body.absence) || 0,
+            avance: Number(req.body.avance) || 0
         });
         const salaryWithEmployee = await Salary.findByPk(salary.id, { include: [Employee] });
         res.json(salaryWithEmployee);
@@ -218,7 +219,8 @@ app.put('/api/salaries/:id', async (req, res) => {
             month: req.body.month !== undefined ? Number(req.body.month) : undefined,
             salaire: req.body.salaire !== undefined ? Number(req.body.salaire) : undefined,
             prime: req.body.prime !== undefined ? Number(req.body.prime) : undefined,
-            absence: req.body.absence !== undefined ? Number(req.body.absence) : undefined
+            absence: req.body.absence !== undefined ? Number(req.body.absence) : undefined,
+            avance: req.body.avance !== undefined ? Number(req.body.avance) : undefined
         }, { where: { id } });
         if (updated) {
             const updatedSalary = await Salary.findByPk(id, { include: [Employee] });
@@ -312,7 +314,8 @@ app.post('/api/generate-payslip', async (req, res) => {
         const basePayForWorkedDays = dailyRate * workedDays;
 
         const primeAmount = Number(salary.prime) || 0;
-        const netTotal = basePayForWorkedDays + primeAmount;
+        const avanceAmount = Number(salary.avance) || 0;
+        const netTotal = basePayForWorkedDays + primeAmount - avanceAmount;
 
         const doc = new PDFDocument({ margin: 20, size: 'A5' });
 
@@ -422,6 +425,15 @@ app.post('/api/generate-payslip', async (req, res) => {
             doc.text(primeAmount.toFixed(3), cols[4] + 2, rowY, { width: cols[5] - cols[4] - 4, align: 'right' });
         }
 
+        // Advance Row
+        if (avanceAmount > 0) {
+            rowY += 12;
+            const today = new Date().toLocaleDateString('fr-FR');
+            doc.text('AV_SAL', cols[0] + 2, rowY);
+            doc.text(`AVANCE SUR SALAIRE ${today}`, cols[1] + 2, rowY);
+            doc.text(avanceAmount.toFixed(3), cols[5] + 2, rowY, { width: cols[6] - cols[5] - 4, align: 'right' });
+        }
+
         // BRUT Row
         rowY += 12;
         doc.font('Helvetica-Bold').text('BRUT', cols[0] + 2, rowY);
@@ -467,10 +479,268 @@ app.post('/api/generate-payslip', async (req, res) => {
     }
 });
 
+// --- ATTESTATION DE TRAVAIL ---
+
+app.post('/api/generate-work-certificate', async (req, res) => {
+    try {
+        const { employeeId } = req.body;
+        const employee = await Employee.findByPk(employeeId);
+        const company = await Company.findOne();
+
+        if (!employee) {
+            res.status(404).json({ error: 'Employé non trouvé' });
+            return;
+        }
+
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=attestation-travail-${employee.code}.pdf`);
+
+        doc.pipe(res);
+
+        // --- HEADER ---
+        let currentY = 50;
+
+        // Logo
+        if (company?.logo_url) {
+            try {
+                if (company.logo_url.includes('/uploads/')) {
+                    const filename = company.logo_url.split('/uploads/').pop();
+                    const localPath = path.join(__dirname, '../uploads', filename!);
+                    if (fs.existsSync(localPath)) {
+                        doc.image(localPath, 50, currentY, { width: 80 });
+                    }
+                }
+            } catch (e) {
+                console.error('Logo loading error:', e);
+            }
+        }
+
+        // Company info (right side)
+        doc.font('Helvetica-Bold').fontSize(12).text(company?.nom || '', 350, currentY, { width: 200, align: 'right' });
+        doc.font('Helvetica').fontSize(10);
+        doc.text(company?.adresse || '', 350, currentY + 20, { width: 200, align: 'right' });
+        doc.text(`${company?.ville || ''}`, 350, currentY + 35, { width: 200, align: 'right' });
+        doc.text(`CNSS: ${company?.cnss_employeur || ''}`, 350, currentY + 50, { width: 200, align: 'right' });
+
+        currentY = 150;
+
+        // Title
+        doc.font('Helvetica-Bold').fontSize(16).text('ATTESTATION DE TRAVAIL', 50, currentY, { align: 'center' });
+
+        currentY = 200;
+
+        // Body
+        doc.font('Helvetica').fontSize(12);
+
+        const todayDate = new Date().toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        const hireDateFormatted = new Date(employee.date_embauche).toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        doc.text(`Je soussigné(e), représentant légal de ${company?.nom || 'la société'}, certifie par la présente que :`, 50, currentY, { align: 'justify', width: 500 });
+
+        currentY += 40;
+
+        doc.font('Helvetica-Bold').text('Nom et Prénom :', 80, currentY);
+        doc.font('Helvetica').text(`${employee.nom.toUpperCase()} ${employee.prenom}`, 200, currentY);
+
+        currentY += 25;
+
+        doc.font('Helvetica-Bold').text('N° CIN/Passeport :', 80, currentY);
+        doc.font('Helvetica').text(employee.cin, 200, currentY);
+
+        currentY += 25;
+
+        doc.font('Helvetica-Bold').text('Poste occupé :', 80, currentY);
+        doc.font('Helvetica').text(employee.poste, 200, currentY);
+
+        if (employee.service) {
+            currentY += 25;
+            doc.font('Helvetica-Bold').text('Service :', 80, currentY);
+            doc.font('Helvetica').text(employee.service, 200, currentY);
+        }
+
+        currentY += 25;
+
+        doc.font('Helvetica-Bold').text('Type de contrat :', 80, currentY);
+        doc.font('Helvetica').text(employee.type_contrat, 200, currentY);
+
+        currentY += 25;
+
+        doc.font('Helvetica-Bold').text('Date d\'embauche :', 80, currentY);
+        doc.font('Helvetica').text(hireDateFormatted, 200, currentY);
+
+        currentY += 40;
+
+        doc.font('Helvetica').fontSize(12);
+        doc.text(`Cette attestation est délivrée à l'intéressé(e) pour servir et valoir ce que de droit.`, 50, currentY, { align: 'justify', width: 500 });
+
+        currentY += 80;
+
+        // Footer
+        doc.font('Helvetica').fontSize(11);
+        doc.text(`Fait à ${company?.ville || ''}, le ${todayDate}`, 50, currentY);
+
+        currentY += 50;
+
+        doc.font('Helvetica-Bold').text('Signature et cachet de l\'entreprise', 350, currentY, { width: 200, align: 'center' });
+
+        doc.end();
+    } catch (error) {
+        console.error('Work certificate generation error:', error);
+        res.status(500).json({ error: 'Erreur lors de la génération de l\'attestation' });
+    }
+});
+
+// --- ATTESTATION DE STAGE ---
+
+app.post('/api/generate-internship-certificate', async (req, res) => {
+    try {
+        const { employeeId } = req.body;
+        const employee = await Employee.findByPk(employeeId);
+        const company = await Company.findOne();
+
+        if (!employee) {
+            res.status(404).json({ error: 'Stagiaire non trouvé' });
+            return;
+        }
+
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=attestation-stage-${employee.code}.pdf`);
+
+        doc.pipe(res);
+
+        // --- HEADER ---
+        let currentY = 50;
+
+        // Logo
+        if (company?.logo_url) {
+            try {
+                if (company.logo_url.includes('/uploads/')) {
+                    const filename = company.logo_url.split('/uploads/').pop();
+                    const localPath = path.join(__dirname, '../uploads', filename!);
+                    if (fs.existsSync(localPath)) {
+                        doc.image(localPath, 50, currentY, { width: 80 });
+                    }
+                }
+            } catch (e) {
+                console.error('Logo loading error:', e);
+            }
+        }
+
+        // Company info (right side)
+        doc.font('Helvetica-Bold').fontSize(12).text(company?.nom || '', 350, currentY, { width: 200, align: 'right' });
+        doc.font('Helvetica').fontSize(10);
+        doc.text(company?.adresse || '', 350, currentY + 20, { width: 200, align: 'right' });
+        doc.text(`${company?.ville || ''}`, 350, currentY + 35, { width: 200, align: 'right' });
+        doc.text(`CNSS: ${company?.cnss_employeur || ''}`, 350, currentY + 50, { width: 200, align: 'right' });
+
+        currentY = 150;
+
+        // Title
+        doc.font('Helvetica-Bold').fontSize(16).text('ATTESTATION DE STAGE', 50, currentY, { align: 'center' });
+
+        currentY = 200;
+
+        // Body
+        doc.font('Helvetica').fontSize(12);
+
+        const todayDate = new Date().toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        const startDateFormatted = new Date(employee.date_embauche).toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        const endDateFormatted = new Date().toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        doc.text(`Je soussigné(e), représentant légal de ${company?.nom || 'la société'}, atteste par la présente que :`, 50, currentY, { align: 'justify', width: 500 });
+
+        currentY += 40;
+
+        doc.font('Helvetica-Bold').text('Nom et Prénom :', 80, currentY);
+        doc.font('Helvetica').text(`${employee.nom.toUpperCase()} ${employee.prenom}`, 200, currentY);
+
+        currentY += 25;
+
+        doc.font('Helvetica-Bold').text('N° CIN/Passeport :', 80, currentY);
+        doc.font('Helvetica').text(employee.cin, 200, currentY);
+
+        currentY += 25;
+
+        doc.font('Helvetica-Bold').text('Domaine de stage :', 80, currentY);
+        doc.font('Helvetica').text(employee.poste, 200, currentY);
+
+        if (employee.service) {
+            currentY += 25;
+            doc.font('Helvetica-Bold').text('Service :', 80, currentY);
+            doc.font('Helvetica').text(employee.service, 200, currentY);
+        }
+
+        currentY += 25;
+
+        doc.font('Helvetica-Bold').text('Date de début :', 80, currentY);
+        doc.font('Helvetica').text(startDateFormatted, 200, currentY);
+
+        currentY += 25;
+
+        doc.font('Helvetica-Bold').text('Date de fin :', 80, currentY);
+        doc.font('Helvetica').text(endDateFormatted, 200, currentY);
+
+        currentY += 40;
+
+        doc.font('Helvetica').fontSize(12);
+        doc.text(`A effectué un stage au sein de notre établissement durant la période mentionnée ci-dessus.`, 50, currentY, { align: 'justify', width: 500 });
+
+        currentY += 20;
+
+        doc.text(`Durant ce stage, l'intéressé(e) a fait preuve de sérieux, de compétence et d'une grande capacité d'adaptation.`, 50, currentY, { align: 'justify', width: 500 });
+
+        currentY += 30;
+
+        doc.text(`Cette attestation est délivrée à l'intéressé(e) pour servir et valoir ce que de droit.`, 50, currentY, { align: 'justify', width: 500 });
+
+        currentY += 80;
+
+        // Footer
+        doc.font('Helvetica').fontSize(11);
+        doc.text(`Fait à ${company?.ville || ''}, le ${todayDate}`, 50, currentY);
+
+        currentY += 50;
+
+        doc.font('Helvetica-Bold').text('Signature et cachet de l\'entreprise', 350, currentY, { width: 200, align: 'center' });
+
+        doc.end();
+    } catch (error) {
+        console.error('Internship certificate generation error:', error);
+        res.status(500).json({ error: 'Erreur lors de la génération de l\'attestation' });
+    }
+});
+
 // Start Server
 const startServer = async () => {
     try {
-        await sequelize.sync(); // sans alter
+        await sequelize.sync({ alter: true }); // sans alter
         console.log('Database synced successfully');
 
         const server = app.listen(PORT, () => {

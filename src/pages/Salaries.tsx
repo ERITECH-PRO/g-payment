@@ -72,6 +72,7 @@ export default function Salaries() {
     salaire: 0,
     prime: 0,
     absence: 0,
+    avance: 0,
   });
 
   const resetForm = () => {
@@ -82,6 +83,7 @@ export default function Salaries() {
       salaire: 0,
       prime: 0,
       absence: 0,
+      avance: 0,
     });
     setSelectedSalary(null);
   };
@@ -96,6 +98,7 @@ export default function Salaries() {
         salaire: Number(salary.salaire),
         prime: Number(salary.prime) || 0,
         absence: Number(salary.absence) || 0,
+        avance: Number(salary.avance) || 0,
       });
     } else {
       resetForm();
@@ -256,7 +259,8 @@ export default function Salaries() {
                 <TableHead>Mois</TableHead>
                 <TableHead className="text-right">Salaire</TableHead>
                 <TableHead className="text-right">Prime</TableHead>
-                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-right">Avance</TableHead>
+                <TableHead className="text-right">Total Net</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -283,8 +287,11 @@ export default function Salaries() {
                     <TableCell className="text-right">
                       {formatCurrency(Number(salary.prime) || 0)}
                     </TableCell>
+                    <TableCell className="text-right text-destructive">
+                      {Number(salary.avance) > 0 ? `-${formatCurrency(Number(salary.avance))}` : '-'}
+                    </TableCell>
                     <TableCell className="text-right font-bold text-primary">
-                      {formatCurrency(total)}
+                      {formatCurrency(Number(salary.salaire) + (Number(salary.prime) || 0) - (Number(salary.avance) || 0))}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -426,6 +433,17 @@ export default function Salaries() {
                   step="0.5"
                   value={formData.absence || 0}
                   onChange={(e) => setFormData({ ...formData, absence: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="avance">Avance (TND)</Label>
+                <Input
+                  id="avance"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.avance || 0}
+                  onChange={(e) => setFormData({ ...formData, avance: Number(e.target.value) })}
                 />
               </div>
             </div>

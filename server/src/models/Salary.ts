@@ -56,4 +56,11 @@ export class Salary extends Model {
         defaultValue: 0,
     })
     absence!: number;
+
+    @Column({
+        type: DataType.DECIMAL(10, 3),
+        allowNull: true,
+        defaultValue: 0,
+    })
+    avance!: number;
 }
