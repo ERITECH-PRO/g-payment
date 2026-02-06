@@ -29,6 +29,7 @@ export default function Attestations() {
     });
 
     const selectedEmployee = employees.find(e => e.id === formData.employeeId);
+    const employeeHireDate = selectedEmployee?.date_embauche ? new Date(selectedEmployee.date_embauche).toLocaleDateString('fr-FR') : '...';
 
     const handleGenerate = async () => {
         if (!formData.employeeId) {
@@ -125,6 +126,18 @@ export default function Attestations() {
                                 <Switch
                                     checked={formData.isCurrent}
                                     onCheckedChange={(checked) => setFormData({ ...formData, isCurrent: checked })}
+                                />
+                            </div>
+                        )}
+
+                        {formData.type === 'TRAVAIL' && !formData.isCurrent && (
+                            <div className="space-y-2">
+                                <Label htmlFor="dateFinWork">Date de fin de mission *</Label>
+                                <Input
+                                    id="dateFinWork"
+                                    type="date"
+                                    value={formData.dateFin}
+                                    onChange={(e) => setFormData({ ...formData, dateFin: e.target.value })}
                                 />
                             </div>
                         )}
@@ -253,9 +266,8 @@ export default function Attestations() {
                                 <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
                                     <p className="text-xs text-primary font-bold uppercase mb-2">Aperçu du texte :</p>
                                     <p className="text-sm italic text-muted-foreground leading-relaxed">
-                                        "Nous, {company?.nom || '...'}, attestons par la présente que {selectedEmployee.nom} {selectedEmployee.prenom},
-                                        titulaire du CIN n° {selectedEmployee.cin}, {formData.type === 'TRAVAIL'
-                                            ? (formData.isCurrent ? 'occupe actuellement le poste de ' : 'a effectué une mission en tant que ')
+                                        "Nous, {company?.nom || '...'}, attestons par la présente que {selectedEmployee.nom} {selectedEmployee.prenom}, titulaire du CIN n° {selectedEmployee.cin}, {formData.type === 'TRAVAIL'
+                                            ? (formData.isCurrent ? 'occupe actuellement le poste de ' : 'a effectué une mission du ' + (employeeHireDate) + ' au ' + (formData.dateFin || '...') + ' en tant que ')
                                             : 'a effectué un stage du ' + (formData.dateDebut || '...') + ' au ' + (formData.dateFin || '...') + ' en tant que '
                                         }{selectedEmployee.poste}..."
                                     </p>

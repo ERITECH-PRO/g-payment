@@ -73,4 +73,10 @@ export class Company extends Model {
         allowNull: true,
     })
     capital!: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    telephone!: string;
 }

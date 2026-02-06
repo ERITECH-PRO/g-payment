@@ -12,7 +12,8 @@ export const useAttestations = () => {
         isCurrent: boolean,
         issuanceDate: string,
         ville?: string,
-        departement?: string
+        departement?: string,
+        dateFin?: string
     }) => {
         setIsGenerating(true);
         try {

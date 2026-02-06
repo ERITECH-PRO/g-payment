@@ -23,6 +23,7 @@ export default function Settings() {
     banque: '',
     ccb: '',
     capital: '',
+    telephone: '',
   });
 
   const [isUploading, setIsUploading] = useState(false);
@@ -40,6 +41,7 @@ export default function Settings() {
         banque: company.banque || '',
         ccb: company.ccb || '',
         capital: company.capital || '',
+        telephone: company.telephone || '',
       });
     }
   }, [company]);
@@ -238,7 +240,7 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* CCB et Capital */}
+            {/* CCB, Capital et Téléphone */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="ccb">CCB</Label>
@@ -258,6 +260,16 @@ export default function Settings() {
                   placeholder="50.000 DT"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="telephone">Téléphone</Label>
+              <Input
+                id="telephone"
+                value={formData.telephone}
+                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                placeholder="+216 XX XXX XXX"
+              />
             </div>
 
             {/* Bouton de sauvegarde */}

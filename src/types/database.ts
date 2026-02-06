@@ -44,6 +44,7 @@ export interface Company {
   banque: string | null;
   ccb: string | null;
   capital: string | null;
+  telephone: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -90,4 +91,5 @@ export interface CompanyFormData {
   banque?: string;
   ccb?: string;
   capital?: string;
+  telephone?: string;
 }

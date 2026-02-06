@@ -162,7 +162,7 @@ export default function Employees() {
                 <TableHead>Prénom</TableHead>
                 <TableHead>CIN</TableHead>
                 <TableHead>Type Contrat</TableHead>
-                <TableHead>Poste</TableHead>
+                <TableHead>Nationalité</TableHead>
                 <TableHead>Date d'embauche</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -182,6 +182,7 @@ export default function Employees() {
                     </span>
                   </TableCell>
                   <TableCell>{employee.poste}</TableCell>
+                  <TableCell>{employee.nationalite}</TableCell>
                   <TableCell>{formatShortDate(employee.date_embauche)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

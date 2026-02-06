@@ -492,7 +492,7 @@ app.post('/api/generate-payslip', async (req, res) => {
 
 app.post('/api/generate-work-certificate', async (req, res) => {
     try {
-        const { employeeId, isCurrent, issuanceDate, ville, departement } = req.body;
+        const { employeeId, isCurrent, issuanceDate, ville, departement, dateFin } = req.body;
         const employee = await Employee.findByPk(employeeId);
         const company = await Company.findOne();
 
@@ -558,20 +558,15 @@ app.post('/api/generate-work-certificate', async (req, res) => {
         });
 
         const hireDate = formatDateFr(employee.date_embauche);
+        const missionEndDate = dateFin ? formatDateFr(dateFin) : today;
 
         doc.text(`Nous, `, { continued: true });
         doc.font('Helvetica-Bold').text(company?.nom || '', { continued: true });
-        doc.font('Helvetica').text(`, attestons par la présente que`);
+        doc.font('Helvetica').text(`, attestons par la présente que `, { continued: true });
 
-        currentY += 40;
+        doc.font('Helvetica-Bold').fontSize(14).text(`${employee.nom.toUpperCase()} ${employee.prenom}`, { continued: true });
 
-        // Guess gender based on prefix if it were in the name, but usually we just use generic or M./Mme
-        // For now, let's use a generic M/Mme placeholder or just the name
-        doc.font('Helvetica-Bold').fontSize(14).text(`${employee.nom.toUpperCase()} ${employee.prenom}`, 50, currentY);
-
-        doc.font('Helvetica').fontSize(13);
-        currentY += 25;
-        doc.text(`, de nationalité `, { continued: true });
+        doc.font('Helvetica').fontSize(13).text(`, de nationalité `, { continued: true });
         doc.font('Helvetica-Bold').text(employee.nationalite || 'tunisienne', { continued: true });
         doc.font('Helvetica').text(`, titulaire du CIN n° `, { continued: true });
         doc.font('Helvetica-Bold').text(employee.cin, { continued: true });
@@ -595,10 +590,11 @@ app.post('/api/generate-work-certificate', async (req, res) => {
             }
             doc.font('Helvetica').text(` du `, { continued: true });
             doc.font('Helvetica-Bold').text(hireDate, { continued: true });
-            doc.font('Helvetica').text(` jusqu'à ce jour.`, { continued: false });
+            doc.font('Helvetica').text(` au `, { continued: true });
+            doc.font('Helvetica-Bold').text(missionEndDate, { continued: false });
         }
 
-        currentY += 100;
+        currentY += 150;
 
         doc.font('Helvetica').fontSize(13);
         doc.text(`Nous délivrons la présente attestation pour servir et valoir ce que de droit.`, 50, currentY, { align: 'justify', width: 500 });
@@ -607,13 +603,13 @@ app.post('/api/generate-work-certificate', async (req, res) => {
 
         // Footer Date and Signature
         doc.font('Helvetica').fontSize(12);
-        doc.text(`Fait à ${ville || company?.ville || ''}, le ${today}`, 50, currentY, { align: 'right', width: 500 });
+        doc.text(`Fait à ${ville || company?.ville || ''}, le ${today}`, 0, currentY, { align: 'right', width: 530 });
 
         currentY += 60;
-        doc.font('Helvetica-Bold').text('Cachet & Signature', 350, currentY, { width: 200, align: 'center' });
+        doc.font('Helvetica-Bold').text('Cachet & Signature', 0, currentY, { width: 530, align: 'right' });
 
         // --- STICKY FOOTER ---
-        const footerY = 780;
+        const footerY = 760;
         doc.moveTo(50, footerY - 10).lineTo(550, footerY - 10).lineWidth(0.5).strokeColor('#ccc').stroke();
         doc.font('Helvetica-Bold').fontSize(9).text(`S.A.R.L Au capital de ${company?.capital || ''}`, 50, footerY, { align: 'center', width: 500 });
         doc.font('Helvetica').fontSize(8);
@@ -700,15 +696,11 @@ app.post('/api/generate-internship-certificate', async (req, res) => {
 
         doc.text(`Nous, `, { continued: true });
         doc.font('Helvetica-Bold').text(company?.nom || '', { continued: true });
-        doc.font('Helvetica').text(`, attestons par la présente que`);
+        doc.font('Helvetica').text(`, attestons par la présente que `, { continued: true });
 
-        currentY += 40;
+        doc.font('Helvetica-Bold').fontSize(14).text(`${employee.nom.toUpperCase()} ${employee.prenom}`, { continued: true });
 
-        doc.font('Helvetica-Bold').fontSize(14).text(`${employee.nom.toUpperCase()} ${employee.prenom}`, 50, currentY);
-
-        doc.font('Helvetica').fontSize(13);
-        currentY += 25;
-        doc.text(`, de nationalité `, { continued: true });
+        doc.font('Helvetica').fontSize(13).text(`, de nationalité `, { continued: true });
         doc.font('Helvetica-Bold').text(employee.nationalite || 'tunisienne', { continued: true });
         doc.font('Helvetica').text(`, titulaire du CIN n° `, { continued: true });
         doc.font('Helvetica-Bold').text(employee.cin, { continued: true });
@@ -723,7 +715,7 @@ app.post('/api/generate-internship-certificate', async (req, res) => {
             doc.text(`.`, { continued: false });
         }
 
-        currentY += 100;
+        currentY += 150;
 
         doc.font('Helvetica').fontSize(13);
         doc.text(`Nous délivrons la présente attestation pour servir et valoir ce que de droit.`, 50, currentY, { align: 'justify', width: 500 });
@@ -732,17 +724,20 @@ app.post('/api/generate-internship-certificate', async (req, res) => {
 
         // Footer Date and Signature
         doc.font('Helvetica').fontSize(12);
-        doc.text(`Fait à ${ville || company?.ville || ''}, le ${today}`, 50, currentY, { align: 'right', width: 500 });
+        doc.text(`Fait à ${ville || company?.ville || ''}, le ${today}`, 0, currentY, { align: 'right', width: 530 });
 
         currentY += 60;
-        doc.font('Helvetica-Bold').text('Cachet & Signature', 350, currentY, { width: 200, align: 'center' });
+        doc.font('Helvetica-Bold').text('Cachet & Signature', 0, currentY, { width: 530, align: 'right' });
 
         // --- STICKY FOOTER ---
-        const footerY = 780;
+        const footerY = 760;
         doc.moveTo(50, footerY - 10).lineTo(550, footerY - 10).lineWidth(0.5).strokeColor('#ccc').stroke();
         doc.font('Helvetica-Bold').fontSize(9).text(`S.A.R.L Au capital de ${company?.capital || ''}`, 50, footerY, { align: 'center', width: 500 });
         doc.font('Helvetica').fontSize(8);
         doc.text(`Siège Social : ${company?.adresse || ''}, ${company?.ville || ''}`, 50, footerY + 12, { align: 'center', width: 500 });
+        if (company?.telephone) {
+            doc.text(`Tél : ${company.telephone}`, 50, footerY + 24, { align: 'center', width: 500 });
+        }
 
         doc.end();
     } catch (error) {
