@@ -527,13 +527,13 @@ app.post('/api/generate-work-certificate', async (req, res) => {
         }
 
         // Company Details (on the right)
-        doc.font('Helvetica-Bold').fontSize(9);
-        doc.text(`MF : ${company?.matricule_fiscal || ''}`, 350, currentY, { width: 200, align: 'left' });
-        doc.text(`BANQUE : ${company?.banque || ''}`, 350, currentY + 12, { width: 200, align: 'left' });
-        doc.text(`CCB : ${company?.ccb || ''}`, 350, currentY + 24, { width: 200, align: 'left' });
+        doc.font('Helvetica-Bold').fontSize(11); // Increased font size
+        doc.text(`MF : ${company?.matricule_fiscal || ''}`, 420, currentY, { width: 130, align: 'left' });
+        doc.text(`BANQUE : ${company?.banque || ''}`, 420, currentY + 18, { width: 130, align: 'left' }); // Increased spacing
+        doc.text(`CCB : ${company?.ccb || ''}`, 420, currentY + 36, { width: 130, align: 'left' }); // Increased spacing
 
         // Horizontal Line
-        doc.moveTo(50, currentY + 80).lineTo(550, currentY + 80).lineWidth(0.5).strokeColor('#ccc').stroke();
+        doc.moveTo(50, currentY + 80).lineTo(550, currentY + 80).lineWidth(1).strokeColor('#1ab0e2').stroke();
 
         currentY = 180;
 
@@ -560,7 +560,7 @@ app.post('/api/generate-work-certificate', async (req, res) => {
         const hireDate = formatDateFr(employee.date_embauche);
         const missionEndDate = dateFin ? formatDateFr(dateFin) : today;
 
-        doc.text(`Nous, `, { continued: true });
+        doc.text(`Nous, `, { continued: true, lineGap: 5 });
         doc.font('Helvetica-Bold').text(company?.nom || '', { continued: true });
         doc.font('Helvetica').text(`, attestons par la présente que `, { continued: true });
 
@@ -594,28 +594,33 @@ app.post('/api/generate-work-certificate', async (req, res) => {
             doc.font('Helvetica-Bold').text(missionEndDate, { continued: false });
         }
 
-        currentY += 150;
+        currentY += 180; // Increased space between content and "Nous délivrons..."
 
         doc.font('Helvetica').fontSize(13);
-        doc.text(`Nous délivrons la présente attestation pour servir et valoir ce que de droit.`, 50, currentY, { align: 'justify', width: 500 });
+        doc.text(`Nous délivrons la présente attestation pour servir et valoir ce que de droit.`, 50, currentY, {
+            align: 'justify',
+            width: 500,
+            lineGap: 5 // Added line spacing
+        });
 
-        currentY += 100;
+        currentY += 120; // Increased space before "Fait à..."
 
         // Footer Date and Signature
         doc.font('Helvetica').fontSize(12);
         doc.text(`Fait à ${ville || company?.ville || ''}, le ${today}`, 0, currentY, { align: 'right', width: 530 });
 
-        currentY += 60;
+        currentY += 80; // Increased space before Cachet
         doc.font('Helvetica-Bold').text('Cachet & Signature', 0, currentY, { width: 530, align: 'right' });
 
         // --- STICKY FOOTER ---
-        const footerY = 760;
-        doc.moveTo(50, footerY - 10).lineTo(550, footerY - 10).lineWidth(0.5).strokeColor('#ccc').stroke();
+        const footerY = 750; // Slightly higher to ensure it stays on page
+        doc.moveTo(50, footerY - 10).lineTo(550, footerY - 10).lineWidth(1).strokeColor('#1ab0e2').stroke();
         doc.font('Helvetica-Bold').fontSize(9).text(`S.A.R.L Au capital de ${company?.capital || ''}`, 50, footerY, { align: 'center', width: 500 });
         doc.font('Helvetica').fontSize(8);
         doc.text(`Siège Social : ${company?.adresse || ''}, ${company?.ville || ''}`, 50, footerY + 12, { align: 'center', width: 500 });
-        // Assuming we might have a phone or just general info
-        // doc.text(`Tél : 00216 XX XXX XXX`, 50, footerY + 24, { align: 'center', width: 500 });
+        if (company?.telephone) {
+            doc.text(`( Tél ) : ${company.telephone}`, 50, footerY + 24, { align: 'center', width: 500 });
+        }
 
         doc.end();
     } catch (error) {
@@ -661,13 +666,13 @@ app.post('/api/generate-internship-certificate', async (req, res) => {
         }
 
         // Company Details (on the right)
-        doc.font('Helvetica-Bold').fontSize(9);
-        doc.text(`MF : ${company?.matricule_fiscal || ''}`, 400, currentY, { width: 150, align: 'left' });
-        doc.text(`BANQUE : ${company?.banque || ''}`, 400, currentY + 12, { width: 150, align: 'left' });
-        doc.text(`CCB : ${company?.ccb || ''}`, 400, currentY + 24, { width: 150, align: 'left' });
+        doc.font('Helvetica-Bold').fontSize(11); // Increased font size
+        doc.text(`MF : ${company?.matricule_fiscal || ''}`, 420, currentY, { width: 130, align: 'left' });
+        doc.text(`BANQUE : ${company?.banque || ''}`, 420, currentY + 18, { width: 130, align: 'left' }); // Increased spacing
+        doc.text(`CCB : ${company?.ccb || ''}`, 420, currentY + 36, { width: 130, align: 'left' }); // Increased spacing
 
         // Horizontal Line
-        doc.moveTo(50, currentY + 80).lineTo(550, currentY + 80).lineWidth(0.5).strokeColor('#ccc').stroke();
+        doc.moveTo(50, currentY + 80).lineTo(550, currentY + 80).lineWidth(1).strokeColor('#1ab0e2').stroke();
 
         currentY = 180;
 
@@ -694,7 +699,7 @@ app.post('/api/generate-internship-certificate', async (req, res) => {
         const start = dateDebut ? formatDateFr(dateDebut) : formatDateFr(employee.date_embauche);
         const end = dateFin ? formatDateFr(dateFin) : new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-        doc.text(`Nous, `, { continued: true });
+        doc.text(`Nous, `, { continued: true, lineGap: 5 });
         doc.font('Helvetica-Bold').text(company?.nom || '', { continued: true });
         doc.font('Helvetica').text(`, attestons par la présente que `, { continued: true });
 
@@ -715,28 +720,32 @@ app.post('/api/generate-internship-certificate', async (req, res) => {
             doc.text(`.`, { continued: false });
         }
 
-        currentY += 150;
+        currentY += 180; // Increased space between content and "Nous délivrons..."
 
         doc.font('Helvetica').fontSize(13);
-        doc.text(`Nous délivrons la présente attestation pour servir et valoir ce que de droit.`, 50, currentY, { align: 'justify', width: 500 });
+        doc.text(`Nous délivrons la présente attestation pour servir et valoir ce que de droit.`, 50, currentY, {
+            align: 'justify',
+            width: 500,
+            lineGap: 5 // Added line spacing
+        });
 
-        currentY += 100;
+        currentY += 120; // Increased space before "Fait à..."
 
         // Footer Date and Signature
         doc.font('Helvetica').fontSize(12);
         doc.text(`Fait à ${ville || company?.ville || ''}, le ${today}`, 0, currentY, { align: 'right', width: 530 });
 
-        currentY += 60;
+        currentY += 80; // Increased space before Cachet
         doc.font('Helvetica-Bold').text('Cachet & Signature', 0, currentY, { width: 530, align: 'right' });
 
         // --- STICKY FOOTER ---
-        const footerY = 760;
-        doc.moveTo(50, footerY - 10).lineTo(550, footerY - 10).lineWidth(0.5).strokeColor('#ccc').stroke();
+        const footerY = 750; // Slightly higher to ensure it stays on page
+        doc.moveTo(50, footerY - 10).lineTo(550, footerY - 10).lineWidth(1).strokeColor('#1ab0e2').stroke();
         doc.font('Helvetica-Bold').fontSize(9).text(`S.A.R.L Au capital de ${company?.capital || ''}`, 50, footerY, { align: 'center', width: 500 });
         doc.font('Helvetica').fontSize(8);
         doc.text(`Siège Social : ${company?.adresse || ''}, ${company?.ville || ''}`, 50, footerY + 12, { align: 'center', width: 500 });
         if (company?.telephone) {
-            doc.text(`Tél : ${company.telephone}`, 50, footerY + 24, { align: 'center', width: 500 });
+            doc.text(`( Tél ) : ${company.telephone}`, 50, footerY + 24, { align: 'center', width: 500 });
         }
 
         doc.end();
