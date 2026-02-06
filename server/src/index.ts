@@ -540,7 +540,7 @@ app.post('/api/generate-work-certificate', async (req, res) => {
         // Title
         doc.font('Helvetica-Bold').fontSize(24).text('ATTESTATION DE TRAVAIL', 50, currentY, { align: 'center' });
 
-        currentY += 120; // Large space between title and paragraph
+        currentY += 180; // Large space between title and paragraph
 
         // Body
         doc.font('Helvetica').fontSize(13);
