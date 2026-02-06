@@ -8,6 +8,7 @@ import Login from "@/pages/Login";
 import Employees from "@/pages/Employees";
 import Salaries from "@/pages/Salaries";
 import Settings from "@/pages/Settings";
+import Attestations from "@/pages/Attestations";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route index element={<Navigate to="/employees" replace />} />
             <Route path="employees" element={<Employees />} />
             <Route path="salaries" element={<Salaries />} />
+            <Route path="attestations" element={<Attestations />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<NotFound />} />

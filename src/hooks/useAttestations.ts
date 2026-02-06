@@ -7,12 +7,18 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 export const useAttestations = () => {
     const [isGenerating, setIsGenerating] = useState(false);
 
-    const generateWorkCertificate = async (employeeId: string) => {
+    const generateWorkCertificate = async (params: {
+        employeeId: string,
+        isCurrent: boolean,
+        issuanceDate: string,
+        ville?: string,
+        departement?: string
+    }) => {
         setIsGenerating(true);
         try {
             const response = await axios.post(
                 `${API_URL}/generate-work-certificate`,
-                { employeeId },
+                params,
                 {
                     responseType: 'blob',
                 }
@@ -22,7 +28,7 @@ export const useAttestations = () => {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `attestation-travail-${employeeId}.pdf`);
+            link.setAttribute('download', `attestation-travail-${params.employeeId}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -37,12 +43,19 @@ export const useAttestations = () => {
         }
     };
 
-    const generateInternshipCertificate = async (employeeId: string) => {
+    const generateInternshipCertificate = async (params: {
+        employeeId: string,
+        dateDebut: string,
+        dateFin: string,
+        issuanceDate: string,
+        ville?: string,
+        departement?: string
+    }) => {
         setIsGenerating(true);
         try {
             const response = await axios.post(
                 `${API_URL}/generate-internship-certificate`,
-                { employeeId },
+                params,
                 {
                     responseType: 'blob',
                 }
@@ -52,7 +65,7 @@ export const useAttestations = () => {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `attestation-stage-${employeeId}.pdf`);
+            link.setAttribute('download', `attestation-stage-${params.employeeId}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();

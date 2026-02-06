@@ -11,6 +11,7 @@ export interface Employee {
   type_contrat: ContractType;
   service: string | null;
   poste: string;
+  nationalite: string;
   date_embauche: string;
   created_at: string;
   updated_at: string;
@@ -39,6 +40,10 @@ export interface Company {
   logo_url: string | null;
   cnss_employeur: string | null;
   rib: string | null;
+  matricule_fiscal: string | null;
+  banque: string | null;
+  ccb: string | null;
+  capital: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -59,6 +64,7 @@ export interface EmployeeFormData {
   type_contrat: ContractType;
   service?: string;
   poste: string;
+  nationalite: string;
   date_embauche: string;
 }
 
@@ -80,4 +86,8 @@ export interface CompanyFormData {
   logo_url?: string;
   cnss_employeur?: string;
   rib?: string;
+  matricule_fiscal?: string;
+  banque?: string;
+  ccb?: string;
+  capital?: string;
 }

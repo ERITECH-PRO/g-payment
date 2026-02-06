@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Users, 
-  Wallet, 
-  Settings, 
+import {
+  Users,
+  Wallet,
+  Settings,
   LogOut,
-  Building2
+  Building2,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +25,11 @@ const navItems = [
     title: 'Paramètres',
     href: '/settings',
     icon: Settings,
+  },
+  {
+    title: 'Attestations',
+    href: '/attestations',
+    icon: FileText,
   },
 ];
 

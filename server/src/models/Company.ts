@@ -49,4 +49,28 @@ export class Company extends Model {
         allowNull: true,
     })
     rib!: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    matricule_fiscal!: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    banque!: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    ccb!: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    capital!: string;
 }

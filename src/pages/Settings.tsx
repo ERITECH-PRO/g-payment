@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 export default function Settings() {
   const { company, isLoading, saveCompany, uploadLogo } = useCompany();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [formData, setFormData] = useState({
     nom: '',
     adresse: '',
@@ -19,6 +19,10 @@ export default function Settings() {
     logo_url: '',
     cnss_employeur: '',
     rib: '',
+    matricule_fiscal: '',
+    banque: '',
+    ccb: '',
+    capital: '',
   });
 
   const [isUploading, setIsUploading] = useState(false);
@@ -32,35 +36,39 @@ export default function Settings() {
         logo_url: company.logo_url || '',
         cnss_employeur: company.cnss_employeur || '',
         rib: company.rib || '',
+        matricule_fiscal: company.matricule_fiscal || '',
+        banque: company.banque || '',
+        ccb: company.ccb || '',
+        capital: company.capital || '',
       });
     }
   }, [company]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.nom.trim()) {
       toast.error('Le nom de la société est obligatoire');
       return;
     }
-    
+
     await saveCompany.mutateAsync(formData);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     if (!file.type.startsWith('image/')) {
       toast.error('Veuillez sélectionner une image');
       return;
     }
-    
+
     if (file.size > 2 * 1024 * 1024) {
       toast.error('L\'image ne doit pas dépasser 2 Mo');
       return;
     }
-    
+
     setIsUploading(true);
     try {
       const url = await uploadLogo(file);
@@ -198,12 +206,56 @@ export default function Settings() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="matricule_fiscal">Matricule Fiscal</Label>
+                <Input
+                  id="matricule_fiscal"
+                  value={formData.matricule_fiscal}
+                  onChange={(e) => setFormData({ ...formData, matricule_fiscal: e.target.value })}
+                  placeholder="1234567Z/A/M/000"
+                />
+              </div>
+            </div>
+
+            {/* Banque et RIB */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="banque">Banque</Label>
+                <Input
+                  id="banque"
+                  value={formData.banque}
+                  onChange={(e) => setFormData({ ...formData, banque: e.target.value })}
+                  placeholder="Banque Exemple"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="rib">RIB Bancaire</Label>
                 <Input
                   id="rib"
                   value={formData.rib}
                   onChange={(e) => setFormData({ ...formData, rib: e.target.value })}
                   placeholder="XXXX XXXX XXXX XXXX"
+                />
+              </div>
+            </div>
+
+            {/* CCB et Capital */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ccb">CCB</Label>
+                <Input
+                  id="ccb"
+                  value={formData.ccb}
+                  onChange={(e) => setFormData({ ...formData, ccb: e.target.value })}
+                  placeholder="1070 7088 1055 7187 8891"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="capital">Capital Social</Label>
+                <Input
+                  id="capital"
+                  value={formData.capital}
+                  onChange={(e) => setFormData({ ...formData, capital: e.target.value })}
+                  placeholder="50.000 DT"
                 />
               </div>
             </div>

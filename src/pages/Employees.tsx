@@ -63,6 +63,7 @@ export default function Employees() {
     type_contrat: 'CDI',
     service: '',
     poste: '',
+    nationalite: 'tunisienne',
     date_embauche: new Date().toISOString().split('T')[0],
   });
 
@@ -74,6 +75,7 @@ export default function Employees() {
       type_contrat: 'CDI',
       service: '',
       poste: '',
+      nationalite: 'tunisienne',
       date_embauche: new Date().toISOString().split('T')[0],
     });
     setSelectedEmployee(null);
@@ -89,7 +91,8 @@ export default function Employees() {
         type_contrat: employee.type_contrat,
         service: employee.service || '',
         poste: employee.poste,
-        date_embauche: employee.date_embauche,
+        nationalite: employee.nationalite || 'tunisienne',
+        date_embauche: employee.date_embauche.split('T')[0],
       });
     } else {
       resetForm();
@@ -182,33 +185,6 @@ export default function Employees() {
                   <TableCell>{formatShortDate(employee.date_embauche)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={isGenerating}
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => generateWorkCertificate(employee.id)}
-                            disabled={isGenerating}
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Attestation de travail
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => generateInternshipCertificate(employee.id)}
-                            disabled={isGenerating || employee.type_contrat !== 'STAGE'}
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Attestation de stage
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -311,12 +287,6 @@ export default function Employees() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="service">Service</Label>
-                <Input
-                  id="service"
-                  value={formData.service}
-                  onChange={(e) => setFormData({ ...formData, service: e.target.value })}
-                />
               </div>
             </div>
             <div className="space-y-2">

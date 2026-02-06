@@ -60,10 +60,17 @@ export class Employee extends Model {
     poste!: string;
 
     @Column({
-        type: DataType.STRING, // Storing date as string to match frontend type, or could be DATE
+        type: DataType.STRING,
         allowNull: false,
     })
     date_embauche!: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        defaultValue: 'tunisienne',
+    })
+    nationalite!: string;
 
     @HasMany(() => Salary)
     salaries!: Salary[];

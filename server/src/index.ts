@@ -492,7 +492,7 @@ app.post('/api/generate-payslip', async (req, res) => {
 
 app.post('/api/generate-work-certificate', async (req, res) => {
     try {
-        const { employeeId } = req.body;
+        const { employeeId, isCurrent, issuanceDate, ville, departement } = req.body;
         const employee = await Employee.findByPk(employeeId);
         const company = await Company.findOne();
 
@@ -511,7 +511,7 @@ app.post('/api/generate-work-certificate', async (req, res) => {
         // --- HEADER ---
         let currentY = 50;
 
-        // Logo
+        // Logo (on the left)
         if (company?.logo_url) {
             try {
                 if (company.logo_url.includes('/uploads/')) {
@@ -526,82 +526,100 @@ app.post('/api/generate-work-certificate', async (req, res) => {
             }
         }
 
-        // Company info (right side)
-        doc.font('Helvetica-Bold').fontSize(12).text(company?.nom || '', 350, currentY, { width: 200, align: 'right' });
-        doc.font('Helvetica').fontSize(10);
-        doc.text(company?.adresse || '', 350, currentY + 20, { width: 200, align: 'right' });
-        doc.text(`${company?.ville || ''}`, 350, currentY + 35, { width: 200, align: 'right' });
-        doc.text(`CNSS: ${company?.cnss_employeur || ''}`, 350, currentY + 50, { width: 200, align: 'right' });
+        // Company Details (on the right)
+        doc.font('Helvetica-Bold').fontSize(9);
+        doc.text(`MF : ${company?.matricule_fiscal || ''}`, 350, currentY, { width: 200, align: 'left' });
+        doc.text(`BANQUE : ${company?.banque || ''}`, 350, currentY + 12, { width: 200, align: 'left' });
+        doc.text(`CCB : ${company?.ccb || ''}`, 350, currentY + 24, { width: 200, align: 'left' });
 
-        currentY = 150;
+        // Horizontal Line
+        doc.moveTo(50, currentY + 80).lineTo(550, currentY + 80).lineWidth(0.5).strokeColor('#ccc').stroke();
+
+        currentY = 180;
 
         // Title
-        doc.font('Helvetica-Bold').fontSize(16).text('ATTESTATION DE TRAVAIL', 50, currentY, { align: 'center' });
+        doc.font('Helvetica-Bold').fontSize(24).text('ATTESTATION DE TRAVAIL', 50, currentY, { align: 'center' });
 
-        currentY = 200;
+        currentY += 60;
 
         // Body
-        doc.font('Helvetica').fontSize(12);
+        doc.font('Helvetica').fontSize(13);
 
-        const todayDate = new Date().toLocaleDateString('fr-FR', {
+        const formatDateFr = (dateStr: string) => {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        };
+
+        const today = issuanceDate ? formatDateFr(issuanceDate) : new Date().toLocaleDateString('fr-FR', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
         });
 
-        const hireDateFormatted = new Date(employee.date_embauche).toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        const hireDate = formatDateFr(employee.date_embauche);
 
-        doc.text(`Je soussigné(e), représentant légal de ${company?.nom || 'la société'}, certifie par la présente que :`, 50, currentY, { align: 'justify', width: 500 });
+        doc.text(`Nous, `, { continued: true });
+        doc.font('Helvetica-Bold').text(company?.nom || '', { continued: true });
+        doc.font('Helvetica').text(`, attestons par la présente que`);
 
         currentY += 40;
 
-        doc.font('Helvetica-Bold').text('Nom et Prénom :', 80, currentY);
-        doc.font('Helvetica').text(`${employee.nom.toUpperCase()} ${employee.prenom}`, 200, currentY);
+        // Guess gender based on prefix if it were in the name, but usually we just use generic or M./Mme
+        // For now, let's use a generic M/Mme placeholder or just the name
+        doc.font('Helvetica-Bold').fontSize(14).text(`${employee.nom.toUpperCase()} ${employee.prenom}`, 50, currentY);
 
+        doc.font('Helvetica').fontSize(13);
         currentY += 25;
+        doc.text(`, de nationalité `, { continued: true });
+        doc.font('Helvetica-Bold').text(employee.nationalite || 'tunisienne', { continued: true });
+        doc.font('Helvetica').text(`, titulaire du CIN n° `, { continued: true });
+        doc.font('Helvetica-Bold').text(employee.cin, { continued: true });
+        doc.font('Helvetica').text(`, `, { continued: true });
 
-        doc.font('Helvetica-Bold').text('N° CIN/Passeport :', 80, currentY);
-        doc.font('Helvetica').text(employee.cin, 200, currentY);
-
-        currentY += 25;
-
-        doc.font('Helvetica-Bold').text('Poste occupé :', 80, currentY);
-        doc.font('Helvetica').text(employee.poste, 200, currentY);
-
-        if (employee.service) {
-            currentY += 25;
-            doc.font('Helvetica-Bold').text('Service :', 80, currentY);
-            doc.font('Helvetica').text(employee.service, 200, currentY);
+        if (isCurrent) {
+            doc.text(`occupe actuellement le poste de `, { continued: true });
+            doc.font('Helvetica-Bold').text(employee.poste, { continued: true });
+            if (departement) {
+                doc.font('Helvetica').text(` dans le département `, { continued: true });
+                doc.font('Helvetica-Bold').text(departement, { continued: true });
+            }
+            doc.font('Helvetica').text(` au sein de notre entreprise depuis le `, { continued: true });
+            doc.font('Helvetica-Bold').text(hireDate, { continued: false });
+        } else {
+            doc.text(`a effectué une mission au sein de notre entreprise en tant que `, { continued: true });
+            doc.font('Helvetica-Bold').text(employee.poste, { continued: true });
+            if (departement) {
+                doc.font('Helvetica').text(` dans le département `, { continued: true });
+                doc.font('Helvetica-Bold').text(departement, { continued: true });
+            }
+            doc.font('Helvetica').text(` du `, { continued: true });
+            doc.font('Helvetica-Bold').text(hireDate, { continued: true });
+            doc.font('Helvetica').text(` jusqu'à ce jour.`, { continued: false });
         }
 
-        currentY += 25;
+        currentY += 100;
 
-        doc.font('Helvetica-Bold').text('Type de contrat :', 80, currentY);
-        doc.font('Helvetica').text(employee.type_contrat, 200, currentY);
+        doc.font('Helvetica').fontSize(13);
+        doc.text(`Nous délivrons la présente attestation pour servir et valoir ce que de droit.`, 50, currentY, { align: 'justify', width: 500 });
 
-        currentY += 25;
+        currentY += 100;
 
-        doc.font('Helvetica-Bold').text('Date d\'embauche :', 80, currentY);
-        doc.font('Helvetica').text(hireDateFormatted, 200, currentY);
-
-        currentY += 40;
-
+        // Footer Date and Signature
         doc.font('Helvetica').fontSize(12);
-        doc.text(`Cette attestation est délivrée à l'intéressé(e) pour servir et valoir ce que de droit.`, 50, currentY, { align: 'justify', width: 500 });
+        doc.text(`Fait à ${ville || company?.ville || ''}, le ${today}`, 50, currentY, { align: 'right', width: 500 });
 
-        currentY += 80;
+        currentY += 60;
+        doc.font('Helvetica-Bold').text('Cachet & Signature', 350, currentY, { width: 200, align: 'center' });
 
-        // Footer
-        doc.font('Helvetica').fontSize(11);
-        doc.text(`Fait à ${company?.ville || ''}, le ${todayDate}`, 50, currentY);
-
-        currentY += 50;
-
-        doc.font('Helvetica-Bold').text('Signature et cachet de l\'entreprise', 350, currentY, { width: 200, align: 'center' });
+        // --- STICKY FOOTER ---
+        const footerY = 780;
+        doc.moveTo(50, footerY - 10).lineTo(550, footerY - 10).lineWidth(0.5).strokeColor('#ccc').stroke();
+        doc.font('Helvetica-Bold').fontSize(9).text(`S.A.R.L Au capital de ${company?.capital || ''}`, 50, footerY, { align: 'center', width: 500 });
+        doc.font('Helvetica').fontSize(8);
+        doc.text(`Siège Social : ${company?.adresse || ''}, ${company?.ville || ''}`, 50, footerY + 12, { align: 'center', width: 500 });
+        // Assuming we might have a phone or just general info
+        // doc.text(`Tél : 00216 XX XXX XXX`, 50, footerY + 24, { align: 'center', width: 500 });
 
         doc.end();
     } catch (error) {
@@ -610,11 +628,9 @@ app.post('/api/generate-work-certificate', async (req, res) => {
     }
 });
 
-// --- ATTESTATION DE STAGE ---
-
 app.post('/api/generate-internship-certificate', async (req, res) => {
     try {
-        const { employeeId } = req.body;
+        const { employeeId, dateDebut, dateFin, issuanceDate, ville, departement } = req.body;
         const employee = await Employee.findByPk(employeeId);
         const company = await Company.findOne();
 
@@ -633,7 +649,7 @@ app.post('/api/generate-internship-certificate', async (req, res) => {
         // --- HEADER ---
         let currentY = 50;
 
-        // Logo
+        // Logo (on the left)
         if (company?.logo_url) {
             try {
                 if (company.logo_url.includes('/uploads/')) {
@@ -648,96 +664,85 @@ app.post('/api/generate-internship-certificate', async (req, res) => {
             }
         }
 
-        // Company info (right side)
-        doc.font('Helvetica-Bold').fontSize(12).text(company?.nom || '', 350, currentY, { width: 200, align: 'right' });
-        doc.font('Helvetica').fontSize(10);
-        doc.text(company?.adresse || '', 350, currentY + 20, { width: 200, align: 'right' });
-        doc.text(`${company?.ville || ''}`, 350, currentY + 35, { width: 200, align: 'right' });
-        doc.text(`CNSS: ${company?.cnss_employeur || ''}`, 350, currentY + 50, { width: 200, align: 'right' });
+        // Company Details (on the right)
+        doc.font('Helvetica-Bold').fontSize(9);
+        doc.text(`MF : ${company?.matricule_fiscal || ''}`, 400, currentY, { width: 150, align: 'left' });
+        doc.text(`BANQUE : ${company?.banque || ''}`, 400, currentY + 12, { width: 150, align: 'left' });
+        doc.text(`CCB : ${company?.ccb || ''}`, 400, currentY + 24, { width: 150, align: 'left' });
 
-        currentY = 150;
+        // Horizontal Line
+        doc.moveTo(50, currentY + 80).lineTo(550, currentY + 80).lineWidth(0.5).strokeColor('#ccc').stroke();
+
+        currentY = 180;
 
         // Title
-        doc.font('Helvetica-Bold').fontSize(16).text('ATTESTATION DE STAGE', 50, currentY, { align: 'center' });
+        doc.font('Helvetica-Bold').fontSize(24).text('ATTESTATION DE STAGE', 50, currentY, { align: 'center' });
 
-        currentY = 200;
+        currentY += 60;
 
         // Body
-        doc.font('Helvetica').fontSize(12);
+        doc.font('Helvetica').fontSize(13);
 
-        const todayDate = new Date().toLocaleDateString('fr-FR', {
+        const formatDateFr = (dateStr: string) => {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        };
+
+        const today = issuanceDate ? formatDateFr(issuanceDate) : new Date().toLocaleDateString('fr-FR', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
         });
 
-        const startDateFormatted = new Date(employee.date_embauche).toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        const start = dateDebut ? formatDateFr(dateDebut) : formatDateFr(employee.date_embauche);
+        const end = dateFin ? formatDateFr(dateFin) : new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-        const endDateFormatted = new Date().toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
-        doc.text(`Je soussigné(e), représentant légal de ${company?.nom || 'la société'}, atteste par la présente que :`, 50, currentY, { align: 'justify', width: 500 });
+        doc.text(`Nous, `, { continued: true });
+        doc.font('Helvetica-Bold').text(company?.nom || '', { continued: true });
+        doc.font('Helvetica').text(`, attestons par la présente que`);
 
         currentY += 40;
 
-        doc.font('Helvetica-Bold').text('Nom et Prénom :', 80, currentY);
-        doc.font('Helvetica').text(`${employee.nom.toUpperCase()} ${employee.prenom}`, 200, currentY);
+        doc.font('Helvetica-Bold').fontSize(14).text(`${employee.nom.toUpperCase()} ${employee.prenom}`, 50, currentY);
 
+        doc.font('Helvetica').fontSize(13);
         currentY += 25;
-
-        doc.font('Helvetica-Bold').text('N° CIN/Passeport :', 80, currentY);
-        doc.font('Helvetica').text(employee.cin, 200, currentY);
-
-        currentY += 25;
-
-        doc.font('Helvetica-Bold').text('Domaine de stage :', 80, currentY);
-        doc.font('Helvetica').text(employee.poste, 200, currentY);
-
-        if (employee.service) {
-            currentY += 25;
-            doc.font('Helvetica-Bold').text('Service :', 80, currentY);
-            doc.font('Helvetica').text(employee.service, 200, currentY);
+        doc.text(`, de nationalité `, { continued: true });
+        doc.font('Helvetica-Bold').text(employee.nationalite || 'tunisienne', { continued: true });
+        doc.font('Helvetica').text(`, titulaire du CIN n° `, { continued: true });
+        doc.font('Helvetica-Bold').text(employee.cin, { continued: true });
+        doc.font('Helvetica').text(`, a effectué un stage au sein de notre entreprise du `, { continued: true });
+        doc.font('Helvetica-Bold').text(start, { continued: true });
+        doc.font('Helvetica').text(` au `, { continued: true });
+        doc.font('Helvetica-Bold').text(end, { continued: true });
+        if (departement) {
+            doc.font('Helvetica').text(`, dans le département `, { continued: true });
+            doc.font('Helvetica-Bold').text(departement, { continued: false });
+        } else {
+            doc.text(`.`, { continued: false });
         }
 
-        currentY += 25;
+        currentY += 100;
 
-        doc.font('Helvetica-Bold').text('Date de début :', 80, currentY);
-        doc.font('Helvetica').text(startDateFormatted, 200, currentY);
+        doc.font('Helvetica').fontSize(13);
+        doc.text(`Nous délivrons la présente attestation pour servir et valoir ce que de droit.`, 50, currentY, { align: 'justify', width: 500 });
 
-        currentY += 25;
+        currentY += 100;
 
-        doc.font('Helvetica-Bold').text('Date de fin :', 80, currentY);
-        doc.font('Helvetica').text(endDateFormatted, 200, currentY);
-
-        currentY += 40;
-
+        // Footer Date and Signature
         doc.font('Helvetica').fontSize(12);
-        doc.text(`A effectué un stage au sein de notre établissement durant la période mentionnée ci-dessus.`, 50, currentY, { align: 'justify', width: 500 });
+        doc.text(`Fait à ${ville || company?.ville || ''}, le ${today}`, 50, currentY, { align: 'right', width: 500 });
 
-        currentY += 20;
+        currentY += 60;
+        doc.font('Helvetica-Bold').text('Cachet & Signature', 350, currentY, { width: 200, align: 'center' });
 
-        doc.text(`Durant ce stage, l'intéressé(e) a fait preuve de sérieux, de compétence et d'une grande capacité d'adaptation.`, 50, currentY, { align: 'justify', width: 500 });
-
-        currentY += 30;
-
-        doc.text(`Cette attestation est délivrée à l'intéressé(e) pour servir et valoir ce que de droit.`, 50, currentY, { align: 'justify', width: 500 });
-
-        currentY += 80;
-
-        // Footer
-        doc.font('Helvetica').fontSize(11);
-        doc.text(`Fait à ${company?.ville || ''}, le ${todayDate}`, 50, currentY);
-
-        currentY += 50;
-
-        doc.font('Helvetica-Bold').text('Signature et cachet de l\'entreprise', 350, currentY, { width: 200, align: 'center' });
+        // --- STICKY FOOTER ---
+        const footerY = 780;
+        doc.moveTo(50, footerY - 10).lineTo(550, footerY - 10).lineWidth(0.5).strokeColor('#ccc').stroke();
+        doc.font('Helvetica-Bold').fontSize(9).text(`S.A.R.L Au capital de ${company?.capital || ''}`, 50, footerY, { align: 'center', width: 500 });
+        doc.font('Helvetica').fontSize(8);
+        doc.text(`Siège Social : ${company?.adresse || ''}, ${company?.ville || ''}`, 50, footerY + 12, { align: 'center', width: 500 });
 
         doc.end();
     } catch (error) {
